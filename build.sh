@@ -11,33 +11,13 @@ VPCTAG="ChrisMorganVPC"
 if [[ "$1" = "-v" ]]; then
     VERBOSE=true
 fi
-function vftrace() {
-    if [[ ! -z "$VERBOSE" ]]; then
-        printf "$@"
-    fi
-}
-function apply_command() {
-    "$@"
-    RES=$?
-    if [[ "$RES" -ne 0 ]]; then
-        echo "Executing '$@' failed"
-        exit $RES
-    fi
-}
-function ec2() {
-    apply_command aws ec2 "$@"
-}
-function tagit() {
-    ec2 create-tags --resources "$1" --tags  Key=vpctag,Value="${VPCTAG}"
-}
-
-ASSETFILE="assets.txt"
-touch $ASSETFILE
+. ./lib.sh
 
 pid=$$
 tempfilesdir="ec2-responses.${pid}"
 mkdir $tempfilesdir
 cd $tempfilesdir
+ASSETFILE="../assets.txt"
 
 vftrace "Create VPC..."
 
@@ -56,6 +36,7 @@ vftrace "\n"
 vftrace "Create gateway..."
 ec2 create-internet-gateway > gw.json
 gwid=`cat gw.json | jq -r '.InternetGateway.InternetGatewayId'`
+echo "IGWID=${gwid}" >> ${ASSETFILE}
 vftrace "id = $gwid\n"
 
 vftrace "Attach gateway ..."
@@ -65,7 +46,7 @@ vftrace "\n"
 vftrace "Create route table ..."
 ec2 create-route-table      --vpc-id "${vpcid}" > route.table.json
 route_tableid=`cat route.table.json | jq -r '.RouteTable.RouteTableId'`
-echo "ROUTETABLEID="${route_tableid}" > $ASSETFILE
+echo "ROUTETABLEID=${route_tableid}" >> ${ASSETFILE}
 vftrace "id = $route_tableid\n"
 
 vftrace "Setup internet gateway route..."
@@ -89,4 +70,4 @@ vftrace "Setting auto-ip"
 ec2 modify-subnet-attribute --subnet-id "${publicid}" --map-public-ip-on-launch
 vftrace "\n"
 cd ..
-ec2 describe-vpcs --filters Key=tag:vpctag,Value="${VPCTAG}"
+ec2 describe-vpcs --filters Name=tag:vpctag,Values="${VPCTAG}"
