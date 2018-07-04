@@ -17,21 +17,25 @@ pid=$$
 tempfilesdir="ec2-responses.${pid}"
 mkdir $tempfilesdir
 cd $tempfilesdir
-ASSETFILE="../assets.txt"
 
 vftrace "Create VPC..."
-
 ec2 create-vpc --cidr-block 10.0.0.0/16 > vpc.details.json
-
 vpcid=`cat vpc.details.json | jq -r '.Vpc.VpcId'`
 vftrace "id = $vpcid\n"
 
 tagit $vpcid
+ASSETFILE="../${vpcid}assets.txt"
 
-vftrace "Add subnets..."
-ec2 create-subnet --vpc-id "${vpcid}" --cidr-block 10.0.1.0/24
-ec2 create-subnet --vpc-id "${vpcid}" --cidr-block 10.0.0.0/24
-vftrace "\n"
+vftrace "Add first subnet..."
+ec2 create-subnet --vpc-id "${vpcid}" --cidr-block 10.0.1.0/24 > subnet1.json
+sn1=`cat subnet1.json | jq -r '.Subnet.SubnetId'`
+echo "SN1ID=${sn1}" >> ${ASSETFILE}
+vftrace "id = $sn1\n"
+
+ec2 create-subnet --vpc-id "${vpcid}" --cidr-block 10.0.0.0/24 > subnet2.json
+sn2=`cat subnet2.json | jq -r '.Subnet.SubnetId'`
+echo "SN2ID=${sn2}" >> ${ASSETFILE}
+vftrace "id = $sn2\n"
 
 vftrace "Create gateway..."
 ec2 create-internet-gateway > gw.json
@@ -63,11 +67,14 @@ publicid=`cat subnets.json | jq -r '.[] | .ID ' | head -1`
 vftrace "public subnet id = ${publicid}\n"
 
 vftrace "Associating routing table with public subnet..."
-ec2 associate-route-table  --subnet-id "${publicid}" --route-table-id "${route_tableid}"
-vftrace "\n"
+ec2 associate-route-table  --subnet-id "${publicid}" --route-table-id "${route_tableid}" > route-associations.json
+publicrouteassociationid=`cat route-associations.json | jq -r '.AssociationId'`
+echo "ASSOCID=${publicrouteassociationid}" >> ${ASSETFILE}
+vftrace "public route association id = ${publicrouteassociationid}\n"
 
 vftrace "Setting auto-ip"
 ec2 modify-subnet-attribute --subnet-id "${publicid}" --map-public-ip-on-launch
 vftrace "\n"
 cd ..
+vftrace "Listing all VPCs..."
 ec2 describe-vpcs --filters Name=tag:vpctag,Values="${VPCTAG}"
