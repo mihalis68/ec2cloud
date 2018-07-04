@@ -2,6 +2,11 @@
 #
 # Script to build a VPC in AWS EC2
 #
+. tag.sh
+if [[ -z "$VPCTAG" ]]; then
+    echo "Danger : please define your tag in tag.sh"
+    exit
+fi
 VPCTAG="ChrisMorganVPC"
 if [[ "$1" = "-v" ]]; then
     VERBOSE=true
@@ -25,6 +30,9 @@ function ec2() {
 function tagit() {
     ec2 create-tags --resources "$1" --tags  Key=vpctag,Value="${VPCTAG}"
 }
+
+ASSETFILE="assets.txt"
+touch $ASSETFILE
 
 pid=$$
 tempfilesdir="ec2-responses.${pid}"
@@ -57,6 +65,7 @@ vftrace "\n"
 vftrace "Create route table ..."
 ec2 create-route-table      --vpc-id "${vpcid}" > route.table.json
 route_tableid=`cat route.table.json | jq -r '.RouteTable.RouteTableId'`
+echo "ROUTETABLEID="${route_tableid}" > $ASSETFILE
 vftrace "id = $route_tableid\n"
 
 vftrace "Setup internet gateway route..."
@@ -80,4 +89,4 @@ vftrace "Setting auto-ip"
 ec2 modify-subnet-attribute --subnet-id "${publicid}" --map-public-ip-on-launch
 vftrace "\n"
 cd ..
-ec2 describe-vpcs --filters Key=vpctag,Value="${VPCTAG}"
+ec2 describe-vpcs --filters Key=tag:vpctag,Value="${VPCTAG}"
