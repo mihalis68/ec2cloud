@@ -7,7 +7,6 @@ if [[ -z "$VPCTAG" ]]; then
     echo "Danger : please define your tag in tag.sh"
     exit
 fi
-VPCTAG="ChrisMorganVPC"
 if [[ "$1" = "-v" ]]; then
     VERBOSE=true
 fi
