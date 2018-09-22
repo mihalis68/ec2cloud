@@ -16,6 +16,8 @@ fi
 
 ec2 describe-vpcs --filters Name=tag:vpctag,Values="${VPCTAG}" --output text > vpcs.txt
 
+vftrace "deleting VPCs matching ${VPCTAG}...\n"
+
 for VPC in `cat vpcs.txt | grep VPCS | awk '{print $7}'`; do
     vftrace "Delete VPC $VPC..."
     if [[ ! -f "${VPC}assets.txt" ]]; then

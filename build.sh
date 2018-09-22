@@ -2,15 +2,56 @@
 #
 # Script to build a VPC in AWS EC2
 #
+# 
+# This follows Amazon's example for setting up an IPv4 VPC and subnets
+# using the aws cli here :
+# https://docs.aws.amazon.com/vpc/latest/userguide/vpc-subnets-commands-example.html
+#
+
 . tag.sh
 if [[ -z "$VPCTAG" ]]; then
-    echo "Danger : please define your tag in tag.sh"
+    echo "$0: Danger : please define your tag in tag.sh"
     exit
 fi
-if [[ "$1" = "-v" ]]; then
-    VERBOSE=true
-fi
+
 . ./lib.sh
+
+
+for i in "$@"; do
+    case $i in
+	-v)
+	    VERBOSE=true
+	    vftrace "verbose\n"
+	    shift
+	    ;;
+	-c)
+	    CHECK=true
+	    vftrace "check\n"
+	    shift
+	    ;;
+	-t|--tag)
+	    INSTANCETAG="$2"
+	    shift
+	    shift
+	    ;;	    
+	*)
+	    echo "unknown option $i"
+	    usage
+	    exit
+	    ;;
+    esac
+done
+
+vftrace "Check for aws cli...\n"
+aws-check
+jq-check
+exists-check "${VPCTAG}"
+
+
+if [[ -n "$CHECK" ]]; then
+    vftrace "check only - exiting...\n"
+    exit
+fi
 
 pid=$$
 tempfilesdir="ec2-responses.${pid}"

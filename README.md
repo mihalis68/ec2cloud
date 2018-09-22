@@ -2,8 +2,28 @@ ec2cloud
 ========
 
 A collection of scripts to build a VPC for experimenting with Amazon
-EC2 instances in an isolated network. The AWS CLI is expected to be
-available and active in the current path.
+EC2 instances in an isolated network. 
+
+
+Flags
+=====
+
+Pass '-v' to build.sh and destroy.sh to get verbose output
+Pass '-c' to only check credentials then exit
+
+Pre-requisites
+==============
+
+The AWS CLI is expected to be available and active in the current
+path. To check this, the script does a couple of read-only aws calls
+as a test :
+
+aws --version is expected to work
+aws configure get region should show your version
+
+Individual scripts
+==================
+
 
 * build.sh
 
@@ -49,7 +69,3 @@ up.
 A sample tag setting. Uncomment the line and change the tag to match
 your needs before trying to build.
 
-Flags
-=====
-
-Pass '-v' to build.sh and destroy.sh to get verbose output
